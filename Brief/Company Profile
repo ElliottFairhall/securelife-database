@@ -1,0 +1,41 @@
+# Project Brief: SecureLife UK Insurance Data Platform
+
+## Overview
+
+The objective of this project is to implement a **Single Customer View (SCV)** for **SecureLife UK**, a leading UK general insurance provider. SecureLife offers a range of products including Motor, Home, and Life insurance. Historically, these products have been managed in siloed legacy systems, preventing the organisation from understanding the total value and risk profile of individual customers.
+
+## Company History
+
+SecureLife UK was established in 1998 in Leeds with a mission to simplify the insurance process for the British public. Initially focusing on motor insurance, the company expanded into the home and life sectors through strategic acquisitions in the early 2010s. Today, SecureLife serves over 2 million policyholders across the United Kingdom and is known for its "Customer First" philosophy and transparent claims process.
+
+## Company Structure
+
+SecureLife UK is organised into the following executive leadership:
+
+- **CEO**: Strategic oversight and UK market positioning.
+- **Chief Risk Officer (CRO)**: Responsible for actuarial accuracy and underwriting standards.
+- **Chief Data Officer (CDO)**: Oversight of the enterprise data platform and SCV initiative.
+- **Chief Operating Officer (COO)**: Management of claims centres and customer service operations.
+- **Chief Compliance Officer (CCO)**: Ensuring adherence to Financial Conduct Authority (FCA) regulations and GDPR.
+
+## Business Requirements
+
+The SCV initiative must address the following key requirements:
+
+- **Consolidated Customer Profile**: Ability to link a customer across Motor, Home, and Life policies using fuzzy matching and unique identifiers (e.g., National Insurance number or email/postcode combinations).
+- **Total Customer Value (TCV)**: Real-time calculation of total annualised premiums across all active policies.
+- **Claims History Integration**: Visibility of claim events across all products to support more accurate risk assessment at renewal.
+- **Marketing Consent Management**: A centralised "Golden Record" for marketing preferences, ensuring compliance with PECR and GDPR.
+- **Cross-Sell Analytics**: Identification of customers with Motor policies who reside in high-value properties but do not yet hold a SecureLife Home policy.
+
+## Technical Standards
+
+The platform will be built on Snowflake using a medallion architecture:
+
+- **UK Localisation**: All data fields, comments, and documentation must use UK English. Currency is fixed to GBP (£), and tax calculations must account for the current UK Insurance Premium Tax (IPT) rates.
+- **Data Governance**: Implementation of row-level security (RLS) to ensure claims handlers only see relevant cases, and masking policies for sensitive medical data in Life insurance claims.
+- **Auditability**: Full SCD Type 2 tracking for customer address changes and policy status transitions.
+
+## Project Methodology
+
+This project follows an **Agile-Medallion approach**, focusing on delivering value layer-by-layer. Sprints will be dedicated to specific source system integrations, culminating in the production of the `VW_CUSTOMER_360` analytical layer.

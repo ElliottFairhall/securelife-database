@@ -1,0 +1,31 @@
+-- =============================================================================
+-- PRC_LOAD_DIM_GEOGRAPHY
+-- =============================================================================
+
+USE SCHEMA SECURELIFE_DB.DOMAIN;
+
+CREATE OR REPLACE PROCEDURE PRC_LOAD_DIM_GEOGRAPHY()
+RETURNS STRING
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+$$
+BEGIN
+    INSERT INTO DIM_GEOGRAPHY (POSTCODE, CITY, COUNTY, REGION, RISK_CLUSTER)
+    SELECT DISTINCT
+        POSTCODE,
+        'MANUAL_ENTRY' as CITY,
+        'UK' as COUNTY,
+        'UNITED KINGDOM' as REGION,
+        CASE
+            WHEN POSTCODE LIKE 'SW%' THEN 'ZONE_A'
+            WHEN POSTCODE LIKE 'L%' THEN 'ZONE_B'
+            ELSE 'ZONE_C'
+        END as RISK_CLUSTER
+    FROM SECURELIFE_DB.ODS.VW_ODS_POLICIES
+    WHERE POSTCODE IS NOT NULL
+      AND POSTCODE NOT IN (SELECT POSTCODE FROM DIM_GEOGRAPHY);
+
+    RETURN 'DIM_GEOGRAPHY loaded from ODS policies';
+END;
+$$;

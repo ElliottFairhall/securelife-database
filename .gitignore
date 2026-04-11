@@ -1,0 +1,14 @@
+# Snowflake
+.snowflake/
+*.log
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+
+# OS X
+.DS_Store

@@ -1,0 +1,4 @@
+CLAIM_ID,POLICY_REF_SOURCE,SYSTEM_SOURCE,CLAIM_DATE,SETTLEMENT_AMOUNT,STATUS,DESCRIPTION
+CLM-601,MTR-7712,MOTOR,2026-02-14,1250.00,SETTLED,Minor collision at Leeds roundabout.
+CLM-602,HOM-203,HOME,2025-12-12,0.00,OPEN,Theft of garden furniture from secured shed in SW1A.
+CLM-603,LFT-502,LIFE,2026-01-10,0.00,REPUDIATED,Claim denied due to non-disclosure of medical condition.

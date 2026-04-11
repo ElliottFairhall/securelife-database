@@ -1,0 +1,24 @@
+-- =============================================================================
+-- FCT_POLICY_SALES
+-- =============================================================================
+
+USE SCHEMA SECURELIFE_DB.DOMAIN;
+
+CREATE OR REPLACE TABLE FCT_POLICY_SALES (
+    POLICY_SALES_KEY INTEGER IDENTITY (1, 1) PRIMARY KEY,
+    POLICY_REFERENCE VARCHAR(50) NOT NULL,
+
+    CUSTOMER_KEY INTEGER, -- FK to DIM_CUSTOMER
+    POLICY_TYPE_KEY INTEGER, -- FK to DIM_POLICY_TYPE
+    INCEPTION_DATE_KEY INTEGER,
+    EXPIRY_DATE_KEY INTEGER,
+
+    BASE_PREMIUM_AMOUNT DECIMAL(12, 2),
+    IPT_AMOUNT DECIMAL(12, 2),
+    TOTAL_WRITTEN_PREMIUM DECIMAL(12, 2),
+
+    IS_ACTIVE BOOLEAN DEFAULT TRUE,
+    SOURCE_SYSTEM VARCHAR(50),
+    DW_INSERT_TS TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+)
+COMMENT = 'Grain: One row per policy transaction. Tracks financial value and duration.';

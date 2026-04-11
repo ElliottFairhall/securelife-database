@@ -1,0 +1,38 @@
+-- =============================================================================
+-- PRC_LOAD_FCT_SALES
+-- =============================================================================
+
+USE SCHEMA SECURELIFE_DB.DOMAIN;
+
+CREATE OR REPLACE PROCEDURE PRC_LOAD_FCT_SALES()
+RETURNS STRING
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+$$
+BEGIN
+    INSERT INTO FCT_POLICY_SALES (
+        POLICY_REFERENCE, CUSTOMER_KEY, POLICY_TYPE_KEY,
+        INCEPTION_DATE_KEY, EXPIRY_DATE_KEY,
+        BASE_PREMIUM_AMOUNT, IPT_AMOUNT, TOTAL_WRITTEN_PREMIUM,
+        SOURCE_SYSTEM
+    )
+    SELECT
+        p.POLICY_REF,
+        c.CUSTOMER_KEY,
+        pt.POLICY_TYPE_KEY,
+        20260101, -- Placeholder for date logic
+        20270101, -- Placeholder
+        p.PREMIUM_AMOUNT,
+        p.PREMIUM_AMOUNT * 0.12,
+        p.PREMIUM_AMOUNT * 1.12,
+        p.SOURCE_SYSTEM
+    FROM SECURELIFE_DB.ODS.VW_ODS_POLICIES p
+    JOIN DIM_CUSTOMER c ON p.CUSTOMER_ID_REF = c.GLOBAL_CUSTOMER_ID AND c.IS_CURRENT = TRUE
+    JOIN DIM_POLICY_TYPE pt ON p.PRODUCT_LINE = pt.BUSINESS_LINE
+    LEFT JOIN FCT_POLICY_SALES target ON p.POLICY_REF = target.POLICY_REFERENCE
+    WHERE target.POLICY_REFERENCE IS NULL;
+
+    RETURN 'FCT_POLICY_SALES loaded successfully';
+END;
+$$;

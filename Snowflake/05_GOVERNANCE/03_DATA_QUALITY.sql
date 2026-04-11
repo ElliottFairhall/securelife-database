@@ -1,0 +1,41 @@
+-- =============================================================================
+-- 03_DATA_QUALITY
+-- =============================================================================
+
+USE SCHEMA SECURELIFE_DB.GOVERNANCE;
+
+CREATE OR REPLACE TABLE DQ_RESULTS (
+    CHECK_NAME VARCHAR(100),
+    TABLE_NAME VARCHAR(100),
+    FAILURE_COUNT INTEGER,
+    CHECK_TS TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+);
+
+CREATE OR REPLACE PROCEDURE PRC_CHECK_DATA_QUALITY()
+RETURNS STRING
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+$$
+BEGIN
+    -- Check 1: Postcode format (UK)
+    INSERT INTO DQ_RESULTS (CHECK_NAME, TABLE_NAME, FAILURE_COUNT)
+    SELECT
+        'INVALID_POSTCODE_FORMAT',
+        'DIM_CUSTOMER',
+        COUNT(*)
+    FROM SECURELIFE_DB.DOMAIN.DIM_CUSTOMER
+    WHERE NOT REGEXP_LIKE(POSTCODE, '^[A-Z]{1,2}[0-9R][0-9A-Z]? [0-9][ABD-HJLNP-UW-Z]{2}$');
+
+    -- Check 2: Missing National Insurance Numbers
+    INSERT INTO DQ_RESULTS (CHECK_NAME, TABLE_NAME, FAILURE_COUNT)
+    SELECT
+        'MISSING_NINO',
+        'DIM_CUSTOMER',
+        COUNT(*)
+    FROM SECURELIFE_DB.DOMAIN.DIM_CUSTOMER
+    WHERE NATIONAL_INSURANCE_NUMBER IS NULL;
+
+    RETURN 'Data Quality checks completed';
+END;
+$$;

@@ -1,0 +1,19 @@
+-- =============================================================================
+-- VW_ODS_CUSTOMERS
+-- =============================================================================
+
+USE SCHEMA SECURELIFE_DB.ODS;
+
+CREATE OR REPLACE VIEW VW_ODS_CUSTOMERS AS
+SELECT
+    CUSTOMER_ID,
+    FIRST_NAME,
+    LAST_NAME,
+    DOB,
+    PI_NINO,
+    EMAIL_ADDRESS,
+    ADDRESS_POSTCODE,
+    MARKETING_CONSENT,
+    'LEGACY_IDENTITY' AS SOURCE_SYSTEM
+FROM SECURELIFE_DB.STAGING.STRM_CUSTOMER_REFERENCE
+QUALIFY ROW_NUMBER() OVER (PARTITION BY CUSTOMER_ID ORDER BY METADATA$TS DESC) = 1;

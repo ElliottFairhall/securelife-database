@@ -1,0 +1,24 @@
+-- =============================================================================
+-- FCT_POLICY_RENEWALS
+-- =============================================================================
+
+USE SCHEMA SECURELIFE_DB.DOMAIN;
+
+CREATE OR REPLACE TABLE FCT_POLICY_RENEWALS (
+    RENEWAL_KEY INTEGER IDENTITY (1, 1) PRIMARY KEY,
+    ORIGINAL_POLICY_REFERENCE VARCHAR(50),
+    NEW_POLICY_REFERENCE VARCHAR(50),
+
+    CUSTOMER_KEY INTEGER,
+    RENEWAL_DATE_KEY INTEGER,
+
+    PREVIOUS_PREMIUM DECIMAL(12, 2),
+    OFFERED_PREMIUM DECIMAL(12, 2),
+    PRICE_CHANGE_PERCENT DECIMAL(5, 2),
+
+    IS_RETAINED BOOLEAN,
+    REASON_FOR_CHURN VARCHAR(100),
+
+    DW_INSERT_TS TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+)
+COMMENT = 'Tracks policy retention and renewal pricing trends';

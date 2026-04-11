@@ -1,0 +1,207 @@
+// =============================================================================
+// SecureLife UK Insurance Data Platform - Single Customer View (SCV)
+// =============================================================================
+// Purpose:    Integrated data model for Motor, Home, and Life insurance
+// Platform:   Snowflake Cloud Data Platform
+// Version:    1.0.0
+// Author:     Elliott Fairhall
+// Updated:    2026-04-10
+// =============================================================================
+
+Project SecureLife_SCV {
+    database_type: 'Snowflake'
+    Note: '''
+    **SecureLife UK Global Customer View**
+
+    This model integrates separate business lines (Motor, Home, Life) to
+    create a "Golden Record" of the UK policyholder.
+
+    **Key Objectives:**
+    - Cross-sell/Upsell identification
+    - Integrated Risk Assessment (Claims across all products)
+    - Consolidated Marketing Consent
+    - UK Regulatory Compliance (FCA & GDPR)
+    '''
+}
+
+// =============================================================================
+// TABLE GROUPS
+// =============================================================================
+
+TableGroup operational_sources {
+    motor_policy
+    home_policy
+    life_policy
+    claims_raw
+}
+
+TableGroup dimensional_model {
+    dim_date
+    dim_customer
+    dim_policy_type
+    dim_geography
+    dim_claim_status
+}
+
+TableGroup fact_tables {
+    fct_policy_sales
+    fct_claims
+    fct_renewals
+}
+
+// =============================================================================
+// DIMENSION TABLES
+// =============================================================================
+
+Table dim_date [note: 'UK Fiscal and Calendar Date dimension'] {
+    date_key integer [primary key]
+    full_date date [not null]
+    day_name varchar(10)
+    month_name varchar(10)
+    year_number integer
+    fiscal_year integer [note: 'UK Apr-Mar period']
+    is_uk_bank_holiday boolean
+}
+
+Table dim_customer [note: 'The Golden Record (SCV) - SCD Type 2'] {
+    customer_key integer [primary key, increment]
+    global_customer_id varchar(50) [not null, unique, note: 'The resolved identity ID']
+
+    // Identity Attributes
+    title varchar(10)
+    first_name varchar(100)
+    last_name varchar(100)
+    date_of_birth date
+    national_insurance_number varchar(9) [note: 'Sensitive - PII']
+
+    // Contact Info
+    email_address varchar(255)
+    phone_number varchar(20)
+
+    // UK Address
+    address_line_1 varchar(255)
+    city_town varchar(100)
+    postcode varchar(10) [note: 'UK Format']
+    region varchar(50)
+
+    // Consent & Loyalty
+    marketing_consent_flag boolean [not null, default: false]
+    vulnerable_customer_flag boolean [not null, default: false, note: 'FCA requirement']
+    loyalty_tier varchar(20) [note: 'Bronze, Silver, Gold, Platinum']
+
+    // SCD Type 2
+    effective_from timestamp
+    effective_to timestamp
+    is_current boolean
+
+    // Audit
+    dw_insert_ts timestamp
+    dw_update_ts timestamp
+    md5_hash varchar(32)
+}
+
+Table dim_policy_type [note: 'Catalogue of Insurance Products'] {
+    policy_type_key integer [primary key]
+    product_code varchar(20) [unique]
+    product_name varchar(100) [note: 'e.g., Comprehensive Motor, Term Life']
+    business_line varchar(50) [note: 'Motor, Home, Life']
+    underwriter_name varchar(100)
+    is_regulated_fca boolean [default: true]
+}
+
+Table dim_claim_status [note: 'Standardised Claim Lifecycle'] {
+    claim_status_key integer [primary key]
+    status_code varchar(20)
+    status_description varchar(100) [note: 'Open, Under Revision, Settled, Repudiated']
+}
+
+// =============================================================================
+// FACT TABLES
+// =============================================================================
+
+Table fct_policy_sales [note: 'Grain: One row per policy inception/endorsement'] {
+    policy_sales_key integer [primary key, increment]
+    policy_reference varchar(20) [not null]
+
+    // Foreign Keys
+    customer_key integer [ref: > dim_customer.customer_key]
+    policy_type_key integer [ref: > dim_policy_type.policy_type_key]
+    inception_date_key integer [ref: > dim_date.date_key]
+    expiry_date_key integer [ref: > dim_date.date_key]
+
+    // Financials (GBP)
+    net_premium decimal(12,2) [note: 'Base premium']
+    ipt_amount decimal(12,2) [note: 'Insurance Premium Tax (UK)']
+    commission_amount decimal(12,2)
+    total_written_premium decimal(12,2) [note: 'net + ipt']
+
+    // Metadata
+    source_system varchar(50) [note: 'Which legacy system: MOTOR_LEGACY, etc']
+    dw_insert_ts timestamp
+}
+
+Table fct_claims [note: 'Grain: One row per claim event'] {
+    claim_key integer [primary key, increment]
+    claim_reference varchar(20)
+
+    // Foreign Keys
+    customer_key integer [ref: > dim_customer.customer_key]
+    policy_sales_key integer [ref: > fct_policy_sales.policy_sales_key]
+    event_date_key integer [ref: > dim_date.date_key]
+    claim_status_key integer [ref: > dim_claim_status.claim_status_key]
+
+    // Measures
+    reserve_amount_gbp decimal(12,2)
+    paid_amount_gbp decimal(12,2)
+    excess_amount_gbp decimal(12,2)
+
+    claim_description text [note: 'Masked in production']
+    is_at_fault boolean
+}
+
+// =============================================================================
+// OPERATIONAL SOURCES (Mock representations)
+// =============================================================================
+
+Table motor_policy {
+    policy_id integer [pk]
+    reg_number varchar(10)
+    driver_name varchar(255)
+    renewal_date date
+}
+
+Table home_policy {
+    policy_id integer [pk]
+    property_type varchar(50)
+    sum_insured_contents decimal(12,2)
+    postcode varchar(10)
+}
+
+Table life_policy {
+    policy_id integer [pk]
+    sum_assured decimal(12,2)
+    medical_declaration_flag boolean
+}
+
+Table claims_raw {
+    claim_id varchar(50) [pk]
+    policy_ref_source varchar(50)
+    system_source varchar(20)
+    claim_date date
+}
+
+Table dim_geography {
+    geography_key integer [pk]
+    postcode varchar(10) [unique]
+    city varchar(100)
+    county varchar(100)
+    risk_cluster varchar(10)
+}
+
+Table fct_renewals {
+    renewal_key integer [pk]
+    original_policy_reference varchar(50)
+    customer_key integer [ref: > dim_customer.customer_key]
+    offered_premium decimal(12,2)
+    is_retained boolean
+}

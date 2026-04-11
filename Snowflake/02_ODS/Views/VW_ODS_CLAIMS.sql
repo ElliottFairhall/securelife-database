@@ -1,0 +1,18 @@
+-- =============================================================================
+-- VW_ODS_CLAIMS
+-- =============================================================================
+
+USE SCHEMA SECURELIFE_DB.ODS;
+
+CREATE OR REPLACE VIEW VW_ODS_CLAIMS AS
+SELECT
+    CLAIM_ID,
+    POLICY_REF_SOURCE AS POLICY_REF,
+    SYSTEM_SOURCE AS BUSINESS_LINE,
+    CLAIM_DATE,
+    SETTLEMENT_AMOUNT,
+    STATUS,
+    DESCRIPTION,
+    'LEGACY_CLAIMS' AS SOURCE_SYSTEM
+FROM SECURELIFE_DB.STAGING.STRM_CLAIMS_RAW
+QUALIFY ROW_NUMBER() OVER (PARTITION BY CLAIM_ID ORDER BY METADATA$TS DESC) = 1;

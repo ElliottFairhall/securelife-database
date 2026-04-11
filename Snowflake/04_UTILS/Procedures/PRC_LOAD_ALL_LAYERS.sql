@@ -1,0 +1,35 @@
+-- =============================================================================
+-- PRC_LOAD_ALL_LAYERS
+-- =============================================================================
+
+USE SCHEMA SECURELIFE_DB.UTILS;
+
+CREATE OR REPLACE PROCEDURE PRC_LOAD_ALL_LAYERS(FULL_REBUILD BOOLEAN)
+RETURNS STRING
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+$$
+BEGIN
+    -- 1. ODS Layer
+    CALL SECURELIFE_DB.ODS.PRC_MERGE_CUSTOMERS();
+    CALL SECURELIFE_DB.ODS.PRC_MERGE_POLICIES();
+    CALL SECURELIFE_DB.ODS.PRC_MERGE_CLAIMS();
+    CALL SECURELIFE_DB.UTILS.UTL_LOG_EVENT('INFO', 'ODS_LAYER', 'ODS Layer Merge Complete');
+
+    -- 2. Domain Dimensions
+    CALL SECURELIFE_DB.DOMAIN.PRC_LOAD_DIM_CUSTOMER();
+    CALL SECURELIFE_DB.UTILS.UTL_LOG_EVENT('INFO', 'DOMAIN_DIMENSIONS', 'Dimensions Load Complete');
+
+    -- 3. Domain Facts
+    CALL SECURELIFE_DB.DOMAIN.PRC_LOAD_FCT_SALES();
+    CALL SECURELIFE_DB.DOMAIN.PRC_LOAD_FCT_CLAIMS();
+    CALL SECURELIFE_DB.UTILS.UTL_LOG_EVENT('INFO', 'DOMAIN_FACTS', 'Facts Load Complete');
+
+    -- 4. Data Quality
+    CALL SECURELIFE_DB.GOVERNANCE.PRC_CHECK_DATA_QUALITY();
+    CALL SECURELIFE_DB.UTILS.UTL_LOG_EVENT('INFO', 'DATA_QUALITY', 'DQ Checks Complete');
+
+    RETURN 'Full pipeline executed successfully';
+END;
+$$;
